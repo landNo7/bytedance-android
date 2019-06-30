@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Hello World</string>
+    <string name="button">注册</string>
+    <string name="edit1">用户名</string>
+    <string name="edit2">密码</string>
+    <string name="edit3">记住密码</string>
+    <string name="radio1">男</string>
+    <string name="radio2">女</string>
+
+</resources>
