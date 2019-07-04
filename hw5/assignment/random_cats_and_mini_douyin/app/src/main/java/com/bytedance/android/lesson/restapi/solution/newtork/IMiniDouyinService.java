@@ -31,7 +31,7 @@ public interface IMiniDouyinService {
     //    "success": true
     //}
     @Multipart
-    @POST("/mini_douyin/invoke/video")
+    @POST("mini_douyin/invoke/video")
     Call<PostVideoResponse> UploadFiles(
             @Query("student_id") String param1,
             @Query("user_name") String param2,

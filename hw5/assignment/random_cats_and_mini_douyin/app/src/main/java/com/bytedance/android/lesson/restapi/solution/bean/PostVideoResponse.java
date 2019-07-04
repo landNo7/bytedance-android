@@ -20,8 +20,9 @@ public class PostVideoResponse {
     private Item result;
     private String url;
     private Boolean success;
+    private String error;
 
-    public Object getResult() {
+    public Item getResult() {
         return result;
     }
 
@@ -31,6 +32,10 @@ public class PostVideoResponse {
 
     public Boolean getSuccess() {
         return success;
+    }
+
+    public String getError(){
+        return error;
     }
 
     public class  Item{

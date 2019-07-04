@@ -176,6 +176,7 @@ public class Solution2C2Activity extends AppCompatActivity {
             @Override
             public void onResponse(Call<PostVideoResponse> call, Response<PostVideoResponse> response) {
                 Toast.makeText(Solution2C2Activity.this,"上传成功",Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "onResponse: "+response.body().getError());
                 mBtn.setText(R.string.success_try_refresh);
                 mBtn.setEnabled(true);
             }
