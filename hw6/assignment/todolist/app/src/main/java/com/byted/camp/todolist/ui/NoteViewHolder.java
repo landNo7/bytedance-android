@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -17,6 +18,8 @@ import com.byted.camp.todolist.beans.State;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
+import static android.support.v4.content.res.ResourcesCompat.getDrawable;
+
 /**
  * Created on 2019/1/23.
  *
@@ -26,13 +29,16 @@ public class NoteViewHolder extends RecyclerView.ViewHolder {
 
     private static final SimpleDateFormat SIMPLE_DATE_FORMAT =
             new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss", Locale.ENGLISH);
-
+    private static final String TAG = "NoteViewHolder";
     private final NoteOperator operator;
 
     private CheckBox checkBox;
     private TextView contentText;
     private TextView dateText;
     private View deleteBtn;
+
+    private static final String COLOR_RED = "#bf0c43";
+    private static final String COLOR_YELLOW = "#f9ba15";
 
     public NoteViewHolder(@NonNull View itemView, NoteOperator operator) {
         super(itemView);
@@ -71,5 +77,10 @@ public class NoteViewHolder extends RecyclerView.ViewHolder {
             contentText.setTextColor(Color.BLACK);
             contentText.setPaintFlags(contentText.getPaintFlags() & ~Paint.STRIKE_THRU_TEXT_FLAG);
         }
+        if (note.getLevel() != 0) {
+            Log.d(TAG, "bind: "+note.getLevel());
+            this.itemView.setBackgroundColor(Color.parseColor((note.getLevel() == 2 ? COLOR_RED : COLOR_YELLOW)));
+        }
+
     }
 }

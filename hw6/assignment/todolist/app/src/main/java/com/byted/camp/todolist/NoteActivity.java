@@ -42,6 +42,7 @@ public class NoteActivity extends AppCompatActivity {
         setContentView(R.layout.activity_note);
         setTitle(R.string.take_a_note);
 
+        mLevelRG = findViewById(R.id.level);
         editText = findViewById(R.id.edit_text);
         editText.setFocusable(true);
         editText.requestFocus();

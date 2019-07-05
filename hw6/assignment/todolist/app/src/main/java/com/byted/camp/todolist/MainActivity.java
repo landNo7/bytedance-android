@@ -130,7 +130,8 @@ public class MainActivity extends AppCompatActivity {
                             TodoContract.TodoEntry.COLUMN_TODO_LEVEL},
                     null,null,
                     null,null,
-                    TodoContract.TodoEntry.COLUMN_TODO_LEVEL+ " DESC");
+                    TodoContract.TodoEntry.COLUMN_TODO_LEVEL + " DESC, "
+                            + TodoContract.TodoEntry.COLUMN_TODO_DATE + " DESC");
             int id = 0;
             while (cursor.moveToNext()) {
                 String content = cursor.getString(cursor.getColumnIndex(TodoContract.TodoEntry.COLUMN_TODO_CONTENT));

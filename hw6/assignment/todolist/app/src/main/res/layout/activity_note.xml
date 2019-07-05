@@ -36,14 +36,6 @@
         app:layout_constraintVertical_bias="0.5">
 
         <RadioButton
-            android:id="@+id/lv_medium"
-            android:layout_width="100dp"
-            android:layout_height="match_parent"
-            android:checked="true"
-            android:gravity="center"
-            android:text="@string/lv_medium" />
-
-        <RadioButton
             android:id="@+id/lv_height"
             android:layout_width="100dp"
             android:layout_height="match_parent"
@@ -51,10 +43,18 @@
             android:text="@string/lv_height" />
 
         <RadioButton
-            android:id="@+id/lv_low"
+            android:id="@+id/lv_medium"
             android:layout_width="100dp"
             android:layout_height="match_parent"
             android:checked="false"
+            android:gravity="center"
+            android:text="@string/lv_medium" />
+
+        <RadioButton
+            android:id="@+id/lv_low"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:checked="true"
             android:text="@string/lv_low" />
     </RadioGroup>
     <Button

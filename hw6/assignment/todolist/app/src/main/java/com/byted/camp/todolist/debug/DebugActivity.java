@@ -14,14 +14,20 @@ import android.widget.Toast;
 
 import com.byted.camp.todolist.R;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class DebugActivity extends AppCompatActivity {
 
     private static int REQUEST_CODE_STORAGE_PERMISSION = 1001;
+    private static final String fileName = "test.txt";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,11 +71,56 @@ public class DebugActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // TODO 把一段文本写入某个存储区的文件中，再读出来，显示在 fileText 上
-                fileText.setText("TODO");
+                File fileDire = getFilesDir();
+                String sb =
+                        "===== Internal Private =====\n" + getInternalPath() +
+                        "===== External Private =====\n" + getExternalPrivatePath() +
+                        "===== External Public =====\n" + getExternalPublicPath();
+                WriteFile(sb);
+                fileText.setText(ReadFile());
             }
         });
     }
 
+    public String ReadFile() {
+        FileInputStream inputStream;
+        String read = null;
+        try {
+            inputStream = this.openFileInput(fileName);
+            read = getReadString(inputStream);
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return read;
+    }
+
+    public void WriteFile(String content) {
+        try {
+
+            FileOutputStream writefile = this.openFileOutput(fileName, MODE_PRIVATE);//获得FileOutputStream
+            byte[]  bytes = content.getBytes();
+            writefile.write(bytes);//将byte数组写入文件
+            writefile.close();//关闭文件输出流
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getReadString(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int length;
+        while((length = inputStream.read(buffer))!=-1){
+            outStream.write(buffer,0,length);
+        }
+        byte[] data = outStream.toByteArray();
+        outStream.close();
+        inputStream.close();
+        return new String(data);
+    }
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
