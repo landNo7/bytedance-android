@@ -15,4 +15,9 @@
     <!-- Note -->
     <string name="take_a_note">Take a note</string>
     <string name="confirm">Confirm</string>
+
+    <!-- Level -->
+    <string name="lv_height">height</string>
+    <string name="lv_medium">medium</string>
+    <string name="lv_low">low</string>
 </resources>
