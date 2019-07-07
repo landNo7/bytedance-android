@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -16,6 +17,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
@@ -23,6 +25,8 @@ import android.widget.TextView;
 
 import com.domker.study.androidstudy.player.VideoPlayerIJK;
 import com.domker.study.androidstudy.player.VideoPlayerListener;
+
+import java.io.IOException;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -38,7 +42,6 @@ public class IJKPlayerActivity extends AppCompatActivity {
     private TextView tvTotalTime;
     private SeekBar VideoSeekBar;
     private long currentPosition;
-    private DisplayMetrics displayMetrics;
     private boolean isPlaying;
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -47,7 +50,6 @@ public class IJKPlayerActivity extends AppCompatActivity {
         setContentView(R.layout.layout_ijkplayer);
         setTitle("ijkPlayer");
 
-        displayMetrics = new DisplayMetrics();
         ijkPlayer = findViewById(R.id.ijkPlayer);
         tvCurrentTime = findViewById(R.id.tvCurrentTime);
         tvTotalTime = findViewById(R.id.tvTotalTime);
@@ -60,22 +62,12 @@ public class IJKPlayerActivity extends AppCompatActivity {
         } catch (Exception e) {
             this.finish();
         }
-        ijkPlayer.getmMediaPlayer().setOnPreparedListener(new IMediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(IMediaPlayer iMediaPlayer) {
-                ijkPlayer.getmMediaPlayer().seekTo(currentPosition);
-                Log.d(TAG, "onPrepared() called with: PlayerState = [" + iMediaPlayer.isPlaying()+ "] , savedState = ["+isPlaying+"]");
-                if(isPlaying){
-                    ijkPlayer.getmMediaPlayer().start();
-                }else {
-                    ijkPlayer.getmMediaPlayer().pause();
-                }
-                VideoSeekBar.setMax((int)iMediaPlayer.getDuration());
-                VideoSeekBar.setProgress((int)iMediaPlayer.getCurrentPosition());
-            }
-        });
+
         ijkPlayer.setListener(new VideoPlayerListener());
-        ijkPlayer.setVideoResource(R.raw.yuminhong);
+        if (!loadVideo()){
+            ijkPlayer.setVideoResource(R.raw.yuminhong);
+        }
+
         mIjkPlayerHandler.sendEmptyMessageDelayed(0,200);
 
         findViewById(R.id.buttonPlay).setOnClickListener(new View.OnClickListener() {
@@ -111,12 +103,6 @@ public class IJKPlayerActivity extends AppCompatActivity {
             }
         });
 
-        ijkPlayer.getmMediaPlayer().setOnVideoSizeChangedListener(new IMediaPlayer.OnVideoSizeChangedListener() {
-            @Override
-            public void onVideoSizeChanged(IMediaPlayer iMediaPlayer, int i, int i1, int i2, int i3) {
-                changeVideoSize();
-            }
-        });
         VideoSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
@@ -134,6 +120,7 @@ public class IJKPlayerActivity extends AppCompatActivity {
                 ijkPlayer.seekTo(seekPos);
             }
         });
+
     }
 
 
@@ -207,6 +194,7 @@ public class IJKPlayerActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        changeVideoSize();
     }
 
     @Override
@@ -226,41 +214,48 @@ public class IJKPlayerActivity extends AppCompatActivity {
 
     public void changeVideoSize() {
 
-        int videoWidth = ijkPlayer.getmMediaPlayer().getVideoWidth();
-        int videoHeight = ijkPlayer.getmMediaPlayer().getVideoHeight();
-
-        int surfaceWidth = ijkPlayer.getSurfaceView().getWidth();
-        int surfaceHeight = ijkPlayer.getSurfaceView().getHeight();
-        Log.d(TAG, "changeVideoSize() called width="+videoWidth+ ",height="+videoHeight);
+        int mVideoWidth = ijkPlayer.getmMediaPlayer().getVideoWidth();
+        int mVideoHeight = ijkPlayer.getmMediaPlayer().getVideoHeight();
+        Log.d(TAG, "changeVideoSize() called width="+mVideoWidth+ ",height="+mVideoHeight);
+        //窗口大小
+        int VideoWidth = ijkPlayer.getWidth();
+        int VideoHeight = ijkPlayer.getHeight();
+        //视频原大小
+        int surfaceWidth = ijkPlayer.getmMediaPlayer().getVideoWidth();
+        int surfaceHeight = ijkPlayer.getmMediaPlayer().getVideoHeight();
+        Log.d(TAG, "changeVideoSize() called width="+VideoWidth+ ",height="+VideoHeight);
         Log.d(TAG, "changeVideoSize() called width="+surfaceWidth+ ",height="+surfaceHeight);
+/*
 
-        //根据视频尺寸去计算->视频可以在sufaceView中放大的最大倍数。
-        float max;
-        if (getResources().getConfiguration().orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
-            //竖屏模式下按视频宽度计算放大倍数值
-            max = Math.max((float) videoWidth / (float) surfaceWidth, (float) videoHeight / (float) surfaceHeight);
-        } else {
-            //横屏模式下按视频高度计算放大倍数值
-            max = Math.max(((float) videoWidth / (float) surfaceHeight), (float) videoHeight / (float) surfaceWidth);
-            //max = Math.max(max,getResources().getDisplayMetrics().heightPixels-40);
-        }
-
-        //视频宽高分别/最大倍数值 计算出放大后的视频尺寸
-        videoWidth = (int) Math.ceil((float) videoWidth / max);
-        videoHeight = (int) Math.ceil((float) videoHeight / max);
+        //根据视频尺寸去计算->视频可以在窗口中放大的最小倍数。
+        float Wscale = (float) VideoWidth / surfaceWidth;
+        float Hscale = (float) VideoHeight / surfaceHeight;
+        Log.d(TAG, "changeVideoSize: scale = "+scale);
+        //视频宽高乘以最小倍数的到视频播放窗口大小
+        VideoWidth = (int) (surfaceWidth * scale);
+        VideoHeight = (int) (surfaceHeight * scale);
+*/
 
         //无法直接设置视频尺寸，将计算出的视频尺寸设置到surfaceView 让视频自动填充。
 
-        ConstraintLayout.LayoutParams params = new Constraints.LayoutParams(videoWidth, videoHeight);
-        params.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-        params.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
-        params.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
-        params.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
-        params.horizontalBias = 0.5f;
-        params.verticalBias = 0.4f;
+        ViewGroup.LayoutParams layoutParams = ijkPlayer.getLayoutParams();
+        layoutParams.width = VideoWidth;
+        layoutParams.height = VideoHeight;
 
-        ijkPlayer.getSurfaceView().setLayoutParams(params);
-        Log.d(TAG, "changeVideoSize() called width="+videoWidth+ ",height="+videoHeight);
+        ijkPlayer.setLayoutParams(layoutParams);
+        Log.d(TAG, "changeVideoSize() called width="+VideoWidth+ ",height="+VideoHeight);
+    }
+
+    private boolean loadVideo(){
+        Uri url=getIntent().getData();
+        if(url!=null){
+            ijkPlayer.setVideoPath(this,url);
+            Log.d(TAG, "loadVideo() called successfully");
+            return true;
+        }else {
+            Log.d(TAG, "loadVideo() failed to call");
+            return false;
+        }
     }
 
 }

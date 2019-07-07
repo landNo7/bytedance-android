@@ -2,6 +2,7 @@ package com.domker.study.androidstudy.player;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.net.Uri;
 import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -60,10 +61,10 @@ public class VideoPlayerIJK extends FrameLayout {
      *
      * @param path the path of the video.
      */
-    public void setVideoPath(String path) {
-        mPath = path;
+    public void setVideoPath(Context context,Uri path) {
+        //mPath = path;
         createSurfaceView();
-        load();
+        load(context,path);
     }
 
     public void setVideoResource(int resourceId) {
@@ -114,11 +115,11 @@ public class VideoPlayerIJK extends FrameLayout {
     /**
      * 加载视频
      */
-    private void load() {
+    private void load(Context context,Uri mPath) {
         //每次都要重新创建IMediaPlayer
         createPlayer();
         try {
-            mMediaPlayer.setDataSource(mPath);
+            mMediaPlayer.setDataSource(context,mPath);
         } catch (IOException e) {
             e.printStackTrace();
         }
