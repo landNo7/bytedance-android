@@ -1,12 +1,17 @@
 package com.bytedance.camera.demo;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Surface;
@@ -52,6 +57,7 @@ public class CustomCameraActivity extends AppCompatActivity {
         if (mCamera != null)
             releaseCameraAndPreview();
 
+
         mCamera = getCamera(Camera.CameraInfo.CAMERA_FACING_BACK);
         camIdx = Camera.CameraInfo.CAMERA_FACING_BACK;
         mSurfaceView = findViewById(R.id.img);
@@ -86,6 +92,7 @@ public class CustomCameraActivity extends AppCompatActivity {
         findViewById(R.id.btn_picture).setOnClickListener(v -> {
             //todo 拍一张照片
             mCamera.takePicture(null,null,mPicture);
+            scanDirAsync(this,new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "CameraDemo"));
         });
 
         findViewById(R.id.btn_record).setOnClickListener(v -> {
@@ -99,6 +106,7 @@ public class CustomCameraActivity extends AppCompatActivity {
                 mCamera.lock();
                 isRecording = false;
                 Log.d(TAG, "onCreate: isRecording = true");
+                scanDirAsync(this,new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "CameraDemo"));
             } else {
                 //todo 录制
                 Log.d(TAG, "onCreate: isRecording = false");
@@ -110,7 +118,7 @@ public class CustomCameraActivity extends AppCompatActivity {
                 mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
 //                mMediaRecorder.setVideoSize(prviewSizeList.get(0).width,prviewSizeList.get(0).height);
                 mMediaRecorder.setOutputFile(getOutputMediaFile(MEDIA_TYPE_VIDEO).toString());
-                Toast.makeText(this, getOutputMediaFile(MEDIA_TYPE_VIDEO).toString(),Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this, getOutputMediaFile(MEDIA_TYPE_VIDEO).toString(),Toast.LENGTH_SHORT).show();
                 mMediaRecorder.setPreviewDisplay(mSurfaceHolder.getSurface());
                 mMediaRecorder.setOrientationHint(rotationDegree);
                 try {
@@ -165,7 +173,6 @@ public class CustomCameraActivity extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
                 // TODO Auto-generated method stub
-                //if (mCamera.getParameters()
                 Parameters p = mCamera.getParameters();
                 if (p.isSmoothZoomSupported()) {
                     p.setZoom(progress);
@@ -178,51 +185,6 @@ public class CustomCameraActivity extends AppCompatActivity {
         });
     }
 
-    private boolean isFocusing;
-/*
-    private boolean newFocus(int x, int y) {
-        //正在对焦时返回
-        if (mCamera == null || isFocusing) {
-            return false;
-        }
-        isFocusing = true;
-        setMeteringRect(x, y);
-        mCameraParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-        mCamera.cancelAutoFocus(); // 先要取消掉进程中所有的聚焦功能
-        try {
-            mCamera.setParameters(mCameraParameters);
-            mCamera.autoFocus(autoFocusCallback);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }*/
-
-/*
-    private void setConfig() {
-        //设置封装格式 默认是MP4
-        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.DEFAULT);
-        //音频编码
-        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-        //图像编码
-        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        //声道
-        mMediaRecorder.setAudioChannels(1);
-        //设置最大录像时间 单位：毫秒
-        mMediaRecorder.setMaxDuration(60 * 1000);
-        //设置最大录制的大小60M 单位，字节
-        mMediaRecorder.setMaxFileSize(60 * 1024 * 1024);
-        //再用44.1Hz采样率
-        mMediaRecorder.setAudioEncodingBitRate(22050);
-        //设置帧率，该帧率必须是硬件支持的，可以通过Camera.CameraParameter.getSupportedPreviewFpsRange()方法获取相机支持的帧率
-        mMediaRecorder.setVideoFrameRate(mFps);
-        //设置码率
-        mMediaRecorder.setVideoEncodingBitRate(500 * 1024 * 8);
-        //设置视频尺寸，通常搭配码率一起使用，可调整视频清晰度
-        mMediaRecorder.setVideoSize(1280, 720);
-    }*/
-
     public Camera getCamera(int position) {
         CAMERA_TYPE = position;
         if (mCamera != null) {
@@ -233,45 +195,8 @@ public class CustomCameraActivity extends AppCompatActivity {
         //todo 摄像头添加属性，例是否自动对焦，设置旋转方向等
         rotationDegree = getCameraDisplayOrientation(position);
         cam.setDisplayOrientation(rotationDegree);
-//        cam = setCameraParameter(cam);
         return cam;
     }
-
-    /*private Camera setCameraParameter(Camera camera) {
-        if (camera == null) return null;
-        Camera.Parameters parameters = camera.getParameters();
-        //获取相机支持的>=20fps的帧率，用于设置给MediaRecorder
-        //因为获取的数值是*1000的，所以要除以1000
-        List<int[]> previewFpsRange = parameters.getSupportedPreviewFpsRange();
-        for (int[] ints : previewFpsRange) {
-            if (ints[0] >= 20000) {
-                mFps = ints[0] / 1000;
-                break;
-            }
-        }
-        //设置聚焦模式
-        List<String> focusModes = parameters.getSupportedFocusModes();
-        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-        } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-        } else {
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-        }
-
-
-        //设置预览尺寸,因为预览的尺寸和最终是录制视频的尺寸无关，所以我们选取最大的数值
-        //通常最大的是手机的分辨率，这样可以让预览画面尽可能清晰并且尺寸不变形，前提是TextureView的尺寸是全屏或者接近全屏
-        List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
-        parameters.setPreviewSize(supportedPreviewSizes.get(0).width, supportedPreviewSizes.get(0).height);
-        //缩短Recording启动时间
-        parameters.setRecordingHint(true);
-        //是否支持影像稳定能力，支持则开启
-        if (parameters.isVideoStabilizationSupported())
-            parameters.setVideoStabilization(true);
-        camera.setParameters(parameters);
-        return camera;
-    }*/
 
     private static final int DEGREE_90 = 90;
     private static final int DEGREE_180 = 180;
@@ -361,6 +286,39 @@ public class CustomCameraActivity extends AppCompatActivity {
         mCamera.startPreview();
     };
 
+    public static final String ACTION_MEDIA_SCANNER_SCAN_DIR = "android.intent.action.MEDIA_SCANNER_SCAN_DIR";
+    public void scanDirAsync(Context ctx, File dir) {
+
+        Log.d(TAG, "scanDirAsync: dir = ["+dir.getAbsolutePath()+"]" );
+        if (dir.isDirectory()) {
+            //测试f这个路径表示的文件是否是一个目录
+            File[] files = dir.listFiles();//返回一个抽象（绝对）路径名数组，这些路径名表示此抽象路径名表示的目录中的文件
+            if (files != null) {
+                //初始化数组长度
+                for (File file : files) {
+                    if (file.isFile()) {
+                        String[] paths = new String[2];
+                        paths[0] = dir.getAbsolutePath() + "/" + file.getName();
+                        Log.d(TAG, "scanDirAsync: paths = " + paths[0]);
+
+                        MediaScannerConnection.scanFile(ctx, paths, new String[]{"image/*", "vedio/*"}, (path, uri) -> {
+                            //扫描完成时逻辑
+                            Log.d(TAG, "scanDirAsync: finished with path = " + path + ", uri = " + uri.toString());
+                        });
+                        Toast.makeText(ctx, paths[0], Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+            Log.d(TAG, "scanDirAsync: ready to asyn ");
+
+            Intent scanIntent = new Intent(ACTION_MEDIA_SCANNER_SCAN_DIR);
+            scanIntent.setData(FileProvider.getUriForFile(this,"com.bytedance.camera.demo",dir));
+            ctx.sendBroadcast(scanIntent);
+
+            Log.d(TAG, "scanDirAsync() called with: ctx = [" + ctx + "], dir = [" + dir.getAbsolutePath()+ "]");
+        }
+
+    }
 
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
         final double ASPECT_TOLERANCE = 0.1;
