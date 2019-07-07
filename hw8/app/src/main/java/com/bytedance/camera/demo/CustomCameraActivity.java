@@ -145,13 +145,13 @@ public class CustomCameraActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_zoom).setOnClickListener(v -> {
             //todo 调焦，需要判断手机是否支持
-
+            //改由SeekBar mZoomBar实现
         });
 
         mZoomBar = findViewById(R.id.seekbar_zoom);
         mZoomBar.setMax(mCamera.getParameters().getMaxZoom());
         mZoomBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-
+            //todo 调焦，需要判断手机是否支持
             public void onStopTrackingTouch(SeekBar seekBar) {
                 // TODO Auto-generated method stub
 
