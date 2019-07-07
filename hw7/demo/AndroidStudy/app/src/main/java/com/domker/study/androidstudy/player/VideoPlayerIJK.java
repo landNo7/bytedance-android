@@ -160,6 +160,7 @@ public class VideoPlayerIJK extends FrameLayout {
             mMediaPlayer.setOnBufferingUpdateListener(listener);
             mMediaPlayer.setOnErrorListener(listener);
         }
+
     }
 
 
@@ -236,5 +237,13 @@ public class VideoPlayerIJK extends FrameLayout {
         if (mMediaPlayer != null) {
             mMediaPlayer.seekTo(l);
         }
+    }
+
+    public SurfaceView getSurfaceView() {
+        return surfaceView;
+    }
+
+    public IMediaPlayer getmMediaPlayer() {
+        return mMediaPlayer;
     }
 }

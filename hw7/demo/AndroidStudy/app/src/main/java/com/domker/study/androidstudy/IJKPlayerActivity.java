@@ -1,12 +1,15 @@
 package com.domker.study.androidstudy;
 
 import android.annotation.SuppressLint;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
+import android.support.constraint.Constraints;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -21,6 +24,7 @@ import android.widget.TextView;
 import com.domker.study.androidstudy.player.VideoPlayerIJK;
 import com.domker.study.androidstudy.player.VideoPlayerListener;
 
+import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 public class IJKPlayerActivity extends AppCompatActivity {
@@ -35,10 +39,7 @@ public class IJKPlayerActivity extends AppCompatActivity {
     private SeekBar VideoSeekBar;
     private long currentPosition;
     private DisplayMetrics displayMetrics;
-    private int mScreenWidth;
-    private int mScreenHeight;
-    private boolean isLand;
-
+    private boolean isPlaying;
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -47,10 +48,6 @@ public class IJKPlayerActivity extends AppCompatActivity {
         setTitle("ijkPlayer");
 
         displayMetrics = new DisplayMetrics();
-        this.getWindow().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        mScreenWidth = displayMetrics.widthPixels;
-        mScreenHeight = displayMetrics.heightPixels;
-
         ijkPlayer = findViewById(R.id.ijkPlayer);
         tvCurrentTime = findViewById(R.id.tvCurrentTime);
         tvTotalTime = findViewById(R.id.tvTotalTime);
@@ -63,15 +60,22 @@ public class IJKPlayerActivity extends AppCompatActivity {
         } catch (Exception e) {
             this.finish();
         }
+        ijkPlayer.getmMediaPlayer().setOnPreparedListener(new IMediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(IMediaPlayer iMediaPlayer) {
+                ijkPlayer.getmMediaPlayer().seekTo(currentPosition);
+                Log.d(TAG, "onPrepared() called with: PlayerState = [" + iMediaPlayer.isPlaying()+ "] , savedState = ["+isPlaying+"]");
+                if(isPlaying){
+                    ijkPlayer.getmMediaPlayer().start();
+                }else {
+                    ijkPlayer.getmMediaPlayer().pause();
+                }
+                VideoSeekBar.setMax((int)iMediaPlayer.getDuration());
+                VideoSeekBar.setProgress((int)iMediaPlayer.getCurrentPosition());
+            }
+        });
         ijkPlayer.setListener(new VideoPlayerListener());
         ijkPlayer.setVideoResource(R.raw.yuminhong);
-        //ijkPlayer.pause();
-//        ijkPlayer.setVideoPath(getVideoPath());
-        if (savedInstanceState != null) {
-            currentPosition = savedInstanceState.getLong("currentPosition");
-            Log.d(TAG, "onCreate: "+ijkPlayer.getCurrentPosition());
-        }
-
         mIjkPlayerHandler.sendEmptyMessageDelayed(0,200);
 
         findViewById(R.id.buttonPlay).setOnClickListener(new View.OnClickListener() {
@@ -104,6 +108,13 @@ public class IJKPlayerActivity extends AppCompatActivity {
                 else
                     Re_SeekBar.setVisibility(View.GONE);
                 return false;
+            }
+        });
+
+        ijkPlayer.getmMediaPlayer().setOnVideoSizeChangedListener(new IMediaPlayer.OnVideoSizeChangedListener() {
+            @Override
+            public void onVideoSizeChanged(IMediaPlayer iMediaPlayer, int i, int i1, int i2, int i3) {
+                changeVideoSize();
             }
         });
         VideoSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -196,58 +207,12 @@ public class IJKPlayerActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-//        if (ijkPlayer != null) {
-//            ijkPlayer.dispatchConfigurationChanged(newConfig);
-//        }
-//        /*isLand = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE;
-//        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-//        mScreenWidth = displayMetrics.widthPixels;
-//        mScreenHeight = displayMetrics.heightPixels;*/
-//
-////        resize();
-//            ijkPlayer.onConfigurationChanged(newConfig);
-//            // 切换为小屏
-//            if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-//                fullScreen.setVisibility(View.GONE);
-//                fullScreen.removeAllViews();
-//                FrameLayout frameLayout = (FrameLayout) findViewById(R.id.video_screen);
-//                frameLayout.removeAllViews();
-//                ViewGroup last = (ViewGroup) player.getParent();//找到videoitemview的父类，然后remove
-//                if (last != null) {
-////                    last.removeAllViews();
-//                    last.removeView(player);
-//                }
-//                frameLayout.addView(player);
-//                int mShowFlags =
-//                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-//                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-//                                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-//                fullScreen.setSystemUiVisibility(mShowFlags);
-//            } else {
-//                //切换为全屏
-//                ViewGroup viewGroup = (ViewGroup) player.getParent();
-//                if (viewGroup == null)
-//                    return;
-//                viewGroup.removeAllViews();
-//                fullScreen.addView(player);
-//                fullScreen.setVisibility(View.VISIBLE);
-//                int mHideFlags =
-//                        View.SYSTEM_UI_FLAG_LOW_PROFILE
-//                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-//                                | View.SYSTEM_UI_FLAG_FULLSCREEN
-//                                | View.SYSTEM_UI_FLAG_IMMERSIVE
-//                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-//                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-//                fullScreen.setSystemUiVisibility(mHideFlags);
-//            }
-//        } else {
-//            fullScreen.setVisibility(View.GONE);
-//        }
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putLong("currentPosition",currentPosition);
+        outState.putBoolean("isplaying",ijkPlayer.isPlaying());
         super.onSaveInstanceState(outState);
     }
 
@@ -255,50 +220,47 @@ public class IJKPlayerActivity extends AppCompatActivity {
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         Log.d(TAG, "onRestoreInstanceState: "+savedInstanceState.getLong("currentPosition"));
         currentPosition = savedInstanceState.getLong("currentPosition");
+        isPlaying = savedInstanceState.getBoolean("isplaying");
         super.onRestoreInstanceState(savedInstanceState);
     }
-/*
-    public void resize() {
-        float areaWH = 0.0f;
-        int height;
 
-        if (!isLand) {
-            // 竖屏16:9
-            height = (int) (mScreenWidth / SHOW_SCALE);
-            areaWH = SHOW_SCALE;
+    public void changeVideoSize() {
+
+        int videoWidth = ijkPlayer.getmMediaPlayer().getVideoWidth();
+        int videoHeight = ijkPlayer.getmMediaPlayer().getVideoHeight();
+
+        int surfaceWidth = ijkPlayer.getSurfaceView().getWidth();
+        int surfaceHeight = ijkPlayer.getSurfaceView().getHeight();
+        Log.d(TAG, "changeVideoSize() called width="+videoWidth+ ",height="+videoHeight);
+        Log.d(TAG, "changeVideoSize() called width="+surfaceWidth+ ",height="+surfaceHeight);
+
+        //根据视频尺寸去计算->视频可以在sufaceView中放大的最大倍数。
+        float max;
+        if (getResources().getConfiguration().orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+            //竖屏模式下按视频宽度计算放大倍数值
+            max = Math.max((float) videoWidth / (float) surfaceWidth, (float) videoHeight / (float) surfaceHeight);
         } else {
-            //横屏按照手机屏幕宽高计算比例
-            height = mScreenHeight;
-            areaWH = mScreenWidth / mScreenHeight;
+            //横屏模式下按视频高度计算放大倍数值
+            max = Math.max(((float) videoWidth / (float) surfaceHeight), (float) videoHeight / (float) surfaceWidth);
+            //max = Math.max(max,getResources().getDisplayMetrics().heightPixels-40);
         }
 
-        RelativeLayout.LayoutParams layoutParams =
-                new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, height);
-        mSurfaceLayout.setLayoutParams(layoutParams);
+        //视频宽高分别/最大倍数值 计算出放大后的视频尺寸
+        videoWidth = (int) Math.ceil((float) videoWidth / max);
+        videoHeight = (int) Math.ceil((float) videoHeight / max);
 
-        int mediaWidth = mMediaPlayer.getVideoWidth();
-        int mediaHeight = mMediaPlayer.getVideoHeight();
+        //无法直接设置视频尺寸，将计算出的视频尺寸设置到surfaceView 让视频自动填充。
 
+        ConstraintLayout.LayoutParams params = new Constraints.LayoutParams(videoWidth, videoHeight);
+        params.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
+        params.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
+        params.startToStart = ConstraintLayout.LayoutParams.PARENT_ID;
+        params.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
+        params.horizontalBias = 0.5f;
+        params.verticalBias = 0.4f;
 
-        float mediaWH = mediaWidth * 1.0f / mediaHeight;
+        ijkPlayer.getSurfaceView().setLayoutParams(params);
+        Log.d(TAG, "changeVideoSize() called width="+videoWidth+ ",height="+videoHeight);
+    }
 
-        RelativeLayout.LayoutParams layoutParamsSV = null;
-
-
-        if (areaWH > mediaWH) {
-            //直接放会矮胖
-            int svWidth = (int) (height * mediaWH);
-            layoutParamsSV = new RelativeLayout.LayoutParams(svWidth, height);
-            layoutParamsSV.addRule(RelativeLayout.CENTER_IN_PARENT);
-            mSurfaceView.setLayoutParams(layoutParamsSV);
-        }
-
-        if (areaWH < mediaWH) {
-            //直接放会瘦高。
-            int svHeight = (int) (mScreenWidth / mediaWH);
-            layoutParamsSV = new RelativeLayout.LayoutParams(mScreenWidth, svHeight);
-            layoutParamsSV.addRule(RelativeLayout.CENTER_IN_PARENT);
-            mSurfaceView.setLayoutParams(layoutParamsSV);
-        }
-    }*/
 }
